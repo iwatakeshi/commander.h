@@ -312,13 +312,13 @@ static void display_all(struct node* n) {
     otherwise return NULL
 */
 
-static struct node* search(struct node* head, char* flag, char* name) {
+static struct node* search_by_flag_and_name(struct node* head, char* flag, char* name) {
 
   struct node* cursor = head;
   while (cursor != NULL) {
-    
     if (cursor->flag != NULL && cursor->name != NULL) {
-      if (strcmp(cursor->flag, flag) == 0 || strcmp(cursor->name, name) == 0)
+      printf("here\n");
+      if (strcmp(cursor->flag, flag) == 0 && strcmp(cursor->name, name) == 0)
       return cursor;
     }
     cursor = cursor->next;
@@ -441,60 +441,66 @@ static struct node* reverse(struct node* head) {
  * Commander
  */
 
-static struct node* flags;
+static struct node* cmd_flags;
+static int cmd_index;
+static void * cmd_value;
 
 int cmdcount() {
-  return count(flags);
+  return count(cmd_flags);
 }
 
 void cmdprint() {
-  display_all(flags);
+  display_all(cmd_flags);
+}
+
+int cmdindex() {
+  return cmd_index;
+}
+
+void * cmdvalue() {
+  return cmd_value;
 }
 
 void cmdopt1(char* format) {
-  if (flags == NULL)
-    flags = create_with_value(format, flags);
+  if (cmd_flags == NULL)
+    cmd_flags = create_with_value(format, cmd_flags);
   else
-    flags = append_with_value(flags, format);
+    cmd_flags = append_with_value(cmd_flags, format);
 }
 
 void cmdopt2(char* flag, char* name) {
-  if (flags == NULL)
-    flags = create_with_name(flag, name, flags);
+  if (cmd_flags == NULL)
+    cmd_flags = create_with_name(flag, name, cmd_flags);
   else
-    flags = append_with_name(flags, flag, name);
+    cmd_flags = append_with_name(cmd_flags, flag, name);
 }
 
 void cmdopt3(char* flag, char* name, char* format) {
-  if (flags == NULL)
-    flags = create_with_name_and_value(flag, name, format, flags);
+  if (cmd_flags == NULL)
+    cmd_flags = create_with_name_and_value(flag, name, format, cmd_flags);
   else
-    flags = append_with_name(flags, flag, name);
+    cmd_flags = append_with_name(cmd_flags, flag, name);
 }
 
-int cmdparse(int argc, char* argv[], int* index) {
+static int cmdupdate(struct node *n, int argc, char* argv[], int index) {
+  int id = n->id;
+  cmd_index = index;
+  if (n->format != NULL) {
+    n->value = malloc(sizeof(argv[index]));
+    sscanf(argv[index], n->format, n->value);
+    cmd_value = n->value;
+  }
+  cmd_flags = remove_any(cmd_flags, n);
+  return id;
+}
+
+int cmdparse(int argc, char* argv[]) {
   for (int i = 0; i < argc; i++) {
-    if (flags != NULL) {
-      struct node* n = search(flags, argv[i], argv[i]);
+    if (cmd_flags != NULL) {
+      struct node* n = search_by_flag_and_name(cmd_flags, argv[i], argv[i]);
+      if (n == NULL) n = search_by_id(cmd_flags, i);
       if (n != NULL) {
-        int id = n->id;
-        *index = i;
-        flags = remove_any(flags, n);
-        return id;
-      } else {
-        printf("here\n");
-        n = search_by_id(flags, i);
-        if (n != NULL) {
-          if (n->format != NULL) {
-            n->value = malloc(sizeof(argv[i]));
-            sscanf(argv[i], n->format, n->value);
-            
-            int id = n->id;
-            *index = i;
-            flags = remove_any(flags, n);
-            return id;
-          }
-        }
+        return cmdupdate(n, argc, argv, i);
       }
     } else
       break;

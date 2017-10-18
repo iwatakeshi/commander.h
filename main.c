@@ -6,11 +6,11 @@ int main(int argc, char *argv[]) {
   cmdopt2("-r", "--row");
   cmdopt2("-c", "--column");
   
-  int flag, index;
-  while((flag = cmdparse(argc, argv, &index)) != -1) {
+  int flag;
+  while((flag = cmdparse(argc, argv)) != -1) {
     switch(flag) {
-      case 1: printf("index: %d, argv[index]: %s\n", index, argv[index]); break;
-      case 2: printf("index: %d, argv[index]: %s\n", index, argv[index]); break;
+      case 1: printf("index: %d, argv[index]: %s\n", cmdindex(), argv[cmdindex()]); break;
+      case 2: printf("index: %d, argv[index]: %s\n", cmdindex(), argv[cmdindex()]); break;
     }
   }
   cmdprint();
