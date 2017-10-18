@@ -312,12 +312,11 @@ static void display_all(struct node* n) {
     otherwise return NULL
 */
 
-static struct node* search_by_flag_and_name(struct node* head, char* flag, char* name) {
+static struct node* search_by_flag_or_name(struct node* head, char* flag, char* name) {
 
   struct node* cursor = head;
   while (cursor != NULL) {
     if (cursor->flag != NULL && cursor->name != NULL) {
-      printf("here\n");
       if (strcmp(cursor->flag, flag) == 0 && strcmp(cursor->name, name) == 0)
       return cursor;
     }
@@ -489,6 +488,7 @@ static int cmdupdate(struct node *n, int argc, char* argv[], int index) {
     n->value = malloc(sizeof(argv[index]));
     sscanf(argv[index], n->format, n->value);
     cmd_value = n->value;
+    free(n->value);
   }
   cmd_flags = remove_any(cmd_flags, n);
   return id;
@@ -497,8 +497,12 @@ static int cmdupdate(struct node *n, int argc, char* argv[], int index) {
 int cmdparse(int argc, char* argv[]) {
   for (int i = 0; i < argc; i++) {
     if (cmd_flags != NULL) {
-      struct node* n = search_by_flag_and_name(cmd_flags, argv[i], argv[i]);
-      if (n == NULL) n = search_by_id(cmd_flags, i);
+      struct node* n = search_by_flag_or_name(cmd_flags, argv[i], argv[i]);
+      if (n != NULL) {
+        return cmdupdate(n, argc, argv, i);
+      }
+
+      n = search_by_id(cmd_flags, i);
       if (n != NULL) {
         return cmdupdate(n, argc, argv, i);
       }

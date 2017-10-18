@@ -8,6 +8,7 @@ int main(int argc, char *argv[]) {
   
   int flag;
   while((flag = cmdparse(argc, argv)) != -1) {
+    printf("flag: %d\n", flag);
     switch(flag) {
       case 1: printf("index: %d, argv[index]: %s\n", cmdindex(), argv[cmdindex()]); break;
       case 2: printf("index: %d, argv[index]: %s\n", cmdindex(), argv[cmdindex()]); break;
