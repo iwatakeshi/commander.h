@@ -284,7 +284,6 @@ static struct node* remove_any(struct node* head, struct node* nd) {
 */
 
 static void display_callback(struct node* n) {
-  char format[100];
   if (n->flag != NULL && n->name != NULL) {
     printf("%d, %s, %s\n", n->id, n->flag, n->name);
   }
@@ -293,7 +292,7 @@ static void display_callback(struct node* n) {
   }
   else if(n->value != NULL) {
     printf("%d, %p\n", n->id, n->value);
-  }
+  } else printf("\%d, ", n->id);
 }
 
 static void display(struct node* n) {
