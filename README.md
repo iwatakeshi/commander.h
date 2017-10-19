@@ -7,38 +7,38 @@ A basic command line utility for C.
 /**
  * Returns the number of options created
  */
-int cmd_opt_count()
+int cmd_opt_count();
 /**
  * Prints a list of options
  */
-void cmd_opt_print()
+void cmd_opt_print();
 /**
  * Returns the index of where the option is located in argv
  */
-int cmd_opt_index()
+int cmd_opt_index();
 /**
  * Returns the index of where the value is located in argv.
  * Note: When no value is provided, the index will be 0 which points to argv[0].
  */
-int cmd_val_index()
+int cmd_val_index();
 /**
  * Create an option that expects a value.
  */
-void cmd_opt_value()
+void cmd_opt_value();
 /**
  * Create an option that expects a flag that could have a value.
  */
-void cmd_opt(char* flag, char* name, bool valuable)
+void cmd_opt(char* flag, char* name, bool valuable);
 /**
  * Parse the command arguments.
  * Returns -1 once the process has completed.
  */
-int cmd_parse(int argc, char* argv[])
+int cmd_parse(int argc, char* argv[]);
 /**
  * Frees the memory used for commander.
  * Returns 0 when completed.
  */
-int cmd_free() 
+int cmd_free(); 
 ```
 
 ## Usage
