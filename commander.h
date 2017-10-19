@@ -1,3 +1,8 @@
+/**
+ * Author: Takeshi Iwana
+ * License: MIT
+ * Credits: http://www.zentut.com/c-tutorial/c-linked-list/
+ */
 #ifndef COMMANDER_H
 #define COMMANDER_H
 
