@@ -2,13 +2,16 @@
 #include <stdio.h>
 
 int main(int argc, char* argv[]) {
-  // Expect the options in the following order
+  /* Expect the options in the following order */
+
+  // Expect a value as the first argument
   cmd_opt_value();
-  // Expect a flag and a value
+  // Expect a flag and a value as the second argument
   cmd_opt("-r", "--row", true);
   cmd_opt("-c", "--column", true);
-  // Expect a flag that has no value
+  // Expect a flag that has no value as the fourth argument
   cmd_opt("-s", "--silent", false);
+  
   int option;
   while ((option = cmd_parse(argc, argv)) != -1) {
       // Switch on the option id
