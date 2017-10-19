@@ -31,7 +31,7 @@ static struct node* remove_any(struct node* head, struct node* nd);
 static void display(struct node* n);
 static void display_all(struct node* n);
 static struct node* search(struct node* head, int id);
-static struct node* search_by_flag_or_name(struct node* head, char* flag, char* name);
+static struct node* search_by_flag(struct node* head, char* flag, char* name);
 
 /**
  * Linked List
@@ -229,7 +229,7 @@ static void display_all(struct node* n) {
     otherwise return NULL
 */
 
-static struct node* search(struct node* head, int id) {
+static struct node* search_by_id(struct node* head, int id) {
   struct node* cursor = head;
   while (cursor != NULL) {
     if (cursor->id == id)
@@ -239,7 +239,7 @@ static struct node* search(struct node* head, int id) {
   return NULL;
 }
 
-static struct node* search_by_flag_or_name(struct node* head, char* flag, char* name) {
+static struct node* search_by_flag(struct node* head, char* flag, char* name) {
   struct node* cursor = head;
   while (cursor != NULL) {
     if (cursor->flag != NULL && cursor->name != NULL) {
@@ -337,7 +337,7 @@ static int cmd_update(struct node* n, int argc, char* argv[], int index) {
   int id = n->id;
   cmd_option_index = index;
   // Find the copy of the current node
-  struct node* n_copy = search(cmd_flags_copy, id);
+  struct node* n_copy = search_by_id(cmd_flags_copy, id);
   // Set the value of the copy if required
   if (n->flagable && n->valuable) {
     // Since we expect a value next to the flag,
@@ -365,12 +365,12 @@ static int cmd_update(struct node* n, int argc, char* argv[], int index) {
 int cmd_parse(int argc, char* argv[]) {
   for (int i = 1; i < argc; i++) {
     if (cmd_flags != NULL) {
-      struct node* n = search_by_flag_or_name(cmd_flags, argv[i], argv[i]);
+      struct node* n = search_by_flag(cmd_flags, argv[i], argv[i]);
       if (n != NULL) {
         return cmd_update(n, argc, argv, i);
       }
 
-      if (argv[i][0] != '-') n = search(cmd_flags, i);
+      if (argv[i][0] != '-') n = search_by_id(cmd_flags, i);
       if (n != NULL && !(n->flagable) && n->valuable) {
         return cmd_update(n, argc, argv, i);
       }
