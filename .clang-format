@@ -5,3 +5,4 @@ AllowShortIfStatementsOnASingleLine: true
 IndentCaseLabels: false
 BreakBeforeBraces: Attach
 ColumnLimit: 0
+IndentCaseLabels: true

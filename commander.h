@@ -30,8 +30,118 @@ static struct node* remove_back(struct node* head);
 static struct node* remove_any(struct node* head, struct node* nd);
 static void display(struct node* n);
 static void display_all(struct node* n);
-static struct node* search(struct node* head, int id);
+static struct node* search_by_id(struct node* head, int id);
 static struct node* search_by_flag(struct node* head, char* flag, char* name);
+static void dispose(struct node* head);
+static void node_id_reset();
+static void node_id_copy_reset();
+static int node_count();
+static int node_count(struct node* head);
+
+/**
+ * Commander
+ */
+static struct node* cmd_flags;
+static struct node* cmd_flags_copy;
+
+static int cmd_option_index;
+static int cmd_value_index;
+
+int cmd_opt_count() {
+  return node_count(cmd_flags_copy);
+}
+
+void cmd_opt_print() {
+  display_all(cmd_flags_copy);
+}
+
+int cmd_opt_index() {
+  return cmd_option_index;
+}
+
+int cmd_val_index() {
+  return cmd_value_index;
+}
+
+int cmd_free() {
+  dispose(cmd_flags);
+  dispose(cmd_flags_copy);
+  return 0;
+}
+
+void cmd_opt_value() {
+  if (cmd_flags == NULL) {
+    cmd_flags = create(cmd_flags, true);
+    cmd_flags_copy = create(cmd_flags_copy, false);
+  } else {
+    cmd_flags = append(cmd_flags, true);
+    cmd_flags_copy = append(cmd_flags_copy, false);
+  }
+}
+
+void cmd_opt(char* flag, char* name, bool valuable) {
+  if (cmd_flags == NULL) {
+    cmd_flags = create_with_flag(flag, name, valuable, cmd_flags, true);
+    cmd_flags_copy = create_with_flag(flag, name, valuable, cmd_flags_copy, false);
+  } else {
+    cmd_flags = append_with_flag(cmd_flags, true, flag, name, valuable);
+    cmd_flags_copy = append_with_flag(cmd_flags_copy, false, flag, name, valuable);
+  }
+}
+
+static int cmd_update(struct node* n, int argc, char* argv[], int index) {
+  int id = n->id;
+  cmd_option_index = index;
+  // Find the copy of the current node
+  struct node* n_copy = search_by_id(cmd_flags_copy, id);
+  // Set the value of the copy if required
+  if (n->flagable && n->valuable) {
+    // Since we expect a value next to the flag,
+    // make sure we don't go over argc
+    if (index + 1 < argc) {
+      if (n_copy != NULL) n_copy->value = argv[index + 1];
+    }
+  } else if (n->valuable && argv[index][0] != '-') {
+    // Copy the value as long the value at the current
+    // index isn't a lonely flag
+    if (n_copy != NULL) n_copy->value = argv[index];
+    // Set the value index to the current index of argv
+    cmd_value_index = index;
+  } else
+    // Just set it the index to argv[0]
+    cmd_value_index = 0;
+  
+  // Remove the node so we won't have 
+  // an endless loop.
+  cmd_flags = remove_any(cmd_flags, n);
+  // Return the option id
+  return id;
+}
+
+int cmd_parse(int argc, char* argv[]) {
+  for (int i = 1; i < argc; i++) {
+    if (cmd_flags != NULL) {
+      struct node* n = search_by_flag(cmd_flags, argv[i], argv[i]);
+      if (n != NULL) {
+        return cmd_update(n, argc, argv, i);
+      }
+
+      if (argv[i][0] != '-') n = search_by_id(cmd_flags, i);
+      if (n != NULL && !(n->flagable) && n->valuable) {
+        return cmd_update(n, argc, argv, i);
+      }
+    } else
+      break;
+  }
+  // printf("linked list original:\n");
+  // display_all(cmd_flags);
+  // printf("----------------------\n");
+  node_id_reset();
+  node_id_copy_reset();
+  return -1;
+}
+
+
 
 /**
  * Linked List
@@ -277,7 +387,7 @@ static void node_id_copy_reset() {
 /*
     return the number of elements in the list
 */
-static int count(struct node* head) {
+static int node_count(struct node* head) {
   struct node* cursor = head;
   int c = 0;
   while (cursor != NULL) {
@@ -285,105 +395,6 @@ static int count(struct node* head) {
     cursor = cursor->next;
   }
   return c;
-}
-
-/**
- * Commander
- */
-
-static struct node* cmd_flags;
-static struct node* cmd_flags_copy;
-
-static int cmd_option_index;
-static int cmd_value_index;
-
-int cmd_opt_count() {
-  return count(cmd_flags_copy);
-}
-
-void cmd_opt_print() {
-  display_all(cmd_flags_copy);
-}
-
-int cmd_opt_index() {
-  return cmd_option_index;
-}
-
-int cmd_val_index() {
-  return cmd_value_index;
-}
-
-void cmd_opt_value() {
-  if (cmd_flags == NULL) {
-    cmd_flags = create(cmd_flags, true);
-    cmd_flags_copy = create(cmd_flags_copy, false);
-  } else {
-    cmd_flags = append(cmd_flags, true);
-    cmd_flags_copy = append(cmd_flags_copy, false);
-  }
-}
-
-void cmd_opt(char* flag, char* name, bool valuable) {
-  if (cmd_flags == NULL) {
-    cmd_flags = create_with_flag(flag, name, valuable, cmd_flags, true);
-    cmd_flags_copy = create_with_flag(flag, name, valuable, cmd_flags_copy, false);
-  } else {
-    cmd_flags = append_with_flag(cmd_flags, true, flag, name, valuable);
-    cmd_flags_copy = append_with_flag(cmd_flags_copy, false, flag, name, valuable);
-  }
-}
-
-static int cmd_update(struct node* n, int argc, char* argv[], int index) {
-  int id = n->id;
-  cmd_option_index = index;
-  // Find the copy of the current node
-  struct node* n_copy = search_by_id(cmd_flags_copy, id);
-  // Set the value of the copy if required
-  if (n->flagable && n->valuable) {
-    // Since we expect a value next to the flag,
-    // make sure we don't go over argc
-    if (index + 1 < argc) {
-      if (n_copy != NULL) n_copy->value = argv[index + 1];
-    }
-  } else if (n->valuable && argv[index][0] != '-') {
-    // Copy the value as long the value at the current
-    // index isn't a lonely flag
-    if (n_copy != NULL) n_copy->value = argv[index];
-    // Set the value index to the current index of argv
-    cmd_value_index = index;
-  } else
-    // Just set it the index to argv[0]
-    cmd_value_index = 0;
-  
-  // Remove the node so we won't have 
-  // an endless loop.
-  cmd_flags = remove_any(cmd_flags, n);
-  // Return the option id
-  return id;
-}
-
-int cmd_parse(int argc, char* argv[]) {
-  for (int i = 1; i < argc; i++) {
-    if (cmd_flags != NULL) {
-      struct node* n = search_by_flag(cmd_flags, argv[i], argv[i]);
-      if (n != NULL) {
-        return cmd_update(n, argc, argv, i);
-      }
-
-      if (argv[i][0] != '-') n = search_by_id(cmd_flags, i);
-      if (n != NULL && !(n->flagable) && n->valuable) {
-        return cmd_update(n, argc, argv, i);
-      }
-    } else
-      break;
-  }
-  // printf("linked list original:\n");
-  // display_all(cmd_flags);
-  // printf("----------------------\n");
-  dispose(cmd_flags);
-  node_id_reset();
-  node_id_copy_reset();
-  return -1;
 }
 
 #endif
