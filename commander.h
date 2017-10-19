@@ -54,6 +54,8 @@ static struct node* create(struct node* next, bool increment_id) {
     new_node->id = node_id++;
   } else
     new_node->id = node_id_copy++;
+  new_node->flag = "";
+  new_node->name = "";
   new_node->next = next;
   new_node->flagable = false;
   new_node->valuable = true;
@@ -77,9 +79,6 @@ static struct node* create_with_flag(char* flag, char* name, bool valuable, stru
   new_node->name = name;
   new_node->flagable = true;
   new_node->valuable = valuable;
-  // if (valuable) {
-  //   new_node = append(new_node, increment_id);
-  // }
   return new_node;
 }
 
@@ -244,7 +243,7 @@ static struct node* search_by_flag_or_name(struct node* head, char* flag, char* 
   struct node* cursor = head;
   while (cursor != NULL) {
     if (cursor->flag != NULL && cursor->name != NULL) {
-      if (strcmp(cursor->flag, flag) == 0 || strcmp(cursor->name, name) == 0)
+      if (strcmp(cursor->flag, flag) == 0)
         return cursor;
     }
     cursor = cursor->next;
