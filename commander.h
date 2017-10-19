@@ -10,15 +10,28 @@ static struct node {
   int id;
   char* flag;
   char* name;
-  char* format;
   void* value;
+  bool flagable;
   bool valuable;
   struct node* next;
 } Node;
 
 static int node_id = 1;
+static int node_id_copy = 1;
 
 typedef void (*callback)(struct node* n);
+static struct node* create(struct node* next, bool increment_id);
+static struct node* create_with_flag(char* flag, char* name, bool valuable, struct node* next, bool increment_id);
+static struct node* append(struct node* head, bool increment_id);
+static struct node* append_with_flag(struct node* head, bool increment_id, char* flag, char* name, bool valuable);
+static void traverse(struct node* head, callback f);
+static struct node* remove_front(struct node* head);
+static struct node* remove_back(struct node* head);
+static struct node* remove_any(struct node* head, struct node* nd);
+static void display(struct node* n);
+static void display_all(struct node* n);
+static struct node* search(struct node* head, int id);
+static struct node* search_by_flag_or_name(struct node* head, char* flag, char* name);
 
 /**
  * Linked List
@@ -31,80 +44,49 @@ typedef void (*callback)(struct node* n);
  
     return the newly created node
 */
-static struct node* create(char* flag, struct node* next) {
+static struct node* create(struct node* next, bool increment_id) {
   struct node* new_node = (struct node*)malloc(sizeof(struct node));
   if (new_node == NULL) {
     printf("Error creating a new node.\n");
     exit(0);
   }
-  new_node->id = node_id;
-  new_node->flag = flag;
+  if (increment_id) {
+    new_node->id = node_id++;
+  } else
+    new_node->id = node_id_copy++;
   new_node->next = next;
-  new_node->valuable = false;
-  node_id++;
-  return new_node;
-}
-
-static struct node* create_with_value(char* format, struct node* next) {
-  struct node* new_node = (struct node*)malloc(sizeof(struct node));
-  if (new_node == NULL) {
-    printf("Error creating a new node.\n");
-    exit(0);
-  }
-  new_node->id = node_id;
-  new_node->next = next;
-  new_node->format = format;
+  new_node->flagable = false;
   new_node->valuable = true;
-  node_id++;
+
   return new_node;
 }
 
-static struct node* create_with_name(char* flag, char* name, struct node* next) {
+static struct node* create_with_flag(char* flag, char* name, bool valuable, struct node* next, bool increment_id) {
   struct node* new_node = (struct node*)malloc(sizeof(struct node));
   if (new_node == NULL) {
     printf("Error creating a new node.\n");
     exit(0);
   }
 
-  new_node->id = node_id;
+  if (increment_id) {
+    new_node->id = node_id++;
+  } else
+    new_node->id = node_id_copy++;
+  new_node->next = next;
   new_node->flag = flag;
   new_node->name = name;
-  new_node->next = next;
-  new_node->valuable = false;
-  node_id++;
+  new_node->flagable = true;
+  new_node->valuable = valuable;
+  // if (valuable) {
+  //   new_node = append(new_node, increment_id);
+  // }
   return new_node;
-}
-
-static struct node* create_with_name_and_value(char* flag, char* name, char* format, struct node* next) {
-  struct node* new_node = (struct node*)malloc(sizeof(struct node));
-  if (new_node == NULL) {
-    printf("Error creating a new node.\n");
-    exit(0);
-  }
-
-  new_node->id = node_id;
-  new_node->flag = flag;
-  new_node->name = name;
-  new_node->next = next;
-  new_node->format = format;
-  new_node->valuable = true;
-  node_id++;
-  return new_node;
-}
-
-/*
-    add a new node at the beginning of the list
-*/
-static struct node* prepend(struct node* head, char* flag) {
-  struct node* new_node = create(flag, head);
-  head = new_node;
-  return head;
 }
 
 /*
     add a new node at the end of the list
 */
-static struct node* append(struct node* head, char* flag) {
+static struct node* append(struct node* head, bool increment_id) {
   if (head == NULL)
     return NULL;
   /* go to the last node */
@@ -113,12 +95,13 @@ static struct node* append(struct node* head, char* flag) {
     cursor = cursor->next;
 
   /* create a new node */
-  struct node* new_node = create(flag, NULL);
+  struct node* new_node = create(NULL, increment_id);
   cursor->next = new_node;
 
   return head;
 }
-static struct node* append_with_value(struct node* head, char* format) {
+
+static struct node* append_with_flag(struct node* head, bool increment_id, char* flag, char* name, bool valuable) {
   if (head == NULL)
     return NULL;
   /* go to the last node */
@@ -127,74 +110,10 @@ static struct node* append_with_value(struct node* head, char* format) {
     cursor = cursor->next;
 
   /* create a new node */
-  struct node* new_node = create_with_value(format, NULL);
+  struct node* new_node = create_with_flag(flag, name, valuable, NULL, increment_id);
   cursor->next = new_node;
 
   return head;
-}
-
-static struct node* append_with_name(struct node* head, char* flag, char* name) {
-  if (head == NULL)
-    return NULL;
-  /* go to the last node */
-  struct node* cursor = head;
-  while (cursor->next != NULL)
-    cursor = cursor->next;
-
-  /* create a new node */
-  struct node* new_node = create_with_name(flag, name, NULL);
-  cursor->next = new_node;
-
-  return head;
-}
-
-/*
-    insert a new node after the prev node
-*/
-static struct node* insert_after(struct node* head, char* flag, struct node* prev) {
-  if (head == NULL || prev == NULL)
-    return NULL;
-  /* find the prev node, starting from the first struct node*/
-  struct node* cursor = head;
-  while (cursor != prev)
-    cursor = cursor->next;
-
-  if (cursor != NULL) {
-    struct node* new_node = create(flag, cursor->next);
-    cursor->next = new_node;
-    return head;
-  } else {
-    return NULL;
-  }
-}
-
-/*
-    insert a new node before the nxt node
-*/
-static struct node* insert_before(struct node* head, char* flag, struct node* nxt) {
-  if (nxt == NULL || head == NULL)
-    return NULL;
-
-  if (head == nxt) {
-    head = prepend(head, flag);
-    return head;
-  }
-
-  /* find the prev node, starting from the first struct node*/
-  struct node* cursor = head;
-  while (cursor != NULL) {
-    if (cursor->next == nxt)
-      break;
-    cursor = cursor->next;
-  }
-
-  if (cursor != NULL) {
-    struct node* new_node = create(flag, cursor->next);
-    cursor->next = new_node;
-    return head;
-  } else {
-    return NULL;
-  }
 }
 
 /*
@@ -256,7 +175,7 @@ static struct node* remove_any(struct node* head, struct node* nd) {
   if (nd == NULL)
     return NULL;
   /* if the node is the first node */
-  if (nd == head)
+  if (nd->id == head->id)
     return remove_front(head);
 
   /* if the node is the last node */
@@ -284,15 +203,15 @@ static struct node* remove_any(struct node* head, struct node* nd) {
 */
 
 static void display_callback(struct node* n) {
-  if (n->flag != NULL && n->name != NULL) {
+  if (n->flagable && !(n->valuable)) {
     printf("%d, %s, %s\n", n->id, n->flag, n->name);
-  }
-  else if (n->flag != NULL && n->name != NULL && n->value != NULL) {
+  } else if (n->flagable && n->valuable) {
     printf("%d, %s, %s, %p\n", n->id, n->flag, n->name, n->value);
+  } else if (!(n->flagable) && n->valuable) {
+    printf("\%d, %p\n", n->id, n->value);
+  } else if (!(n->flagable) && !(n->valuable)) {
+    printf("\%d, ", n->id);
   }
-  else if(n->value != NULL) {
-    printf("%d, %p\n", n->id, n->value);
-  } else printf("\%d, ", n->id);
 }
 
 static void display(struct node* n) {
@@ -311,48 +230,23 @@ static void display_all(struct node* n) {
     otherwise return NULL
 */
 
-static struct node* search_by_flag_or_name(struct node* head, char* flag, char* name) {
-
-  struct node* cursor = head;
-  while (cursor != NULL) {
-    if (cursor->flag != NULL && cursor->name != NULL) {
-      if (strcmp(cursor->flag, flag) == 0 && strcmp(cursor->name, name) == 0)
-      return cursor;
-    }
-    cursor = cursor->next;
-  }
-  return NULL;
-}
-
-static struct node* search_by_flag(struct node* head, char* flag) {
-
-  struct node* cursor = head;
-  while (cursor != NULL) {
-    if (cursor->flag != NULL) {
-      if (strcmp(cursor->flag, flag) == 0)
-      return cursor;
-    }
-    cursor = cursor->next;
-  }
-  return NULL;
-}
-
-static struct node* search_by_name(struct node* head, char* name) {
-
-  struct node* cursor = head;
-  while (cursor != NULL) {
-    if (strcmp(cursor->name, name) == 0)
-      return cursor;
-    cursor = cursor->next;
-  }
-  return NULL;
-}
-
-static struct node* search_by_id(struct node* head, int id) {
+static struct node* search(struct node* head, int id) {
   struct node* cursor = head;
   while (cursor != NULL) {
     if (cursor->id == id)
       return cursor;
+    cursor = cursor->next;
+  }
+  return NULL;
+}
+
+static struct node* search_by_flag_or_name(struct node* head, char* flag, char* name) {
+  struct node* cursor = head;
+  while (cursor != NULL) {
+    if (cursor->flag != NULL && cursor->name != NULL) {
+      if (strcmp(cursor->flag, flag) == 0 || strcmp(cursor->name, name) == 0)
+        return cursor;
+    }
     cursor = cursor->next;
   }
   return NULL;
@@ -374,6 +268,13 @@ static void dispose(struct node* head) {
     }
   }
 }
+
+static void node_id_reset() {
+  node_id = 1;
+}
+static void node_id_copy_reset() {
+  node_id_copy = 1;
+}
 /*
     return the number of elements in the list
 */
@@ -386,128 +287,103 @@ static int count(struct node* head) {
   }
   return c;
 }
-/*
-    sort the linked list using insertion sort
-*/
-static struct node* insertion_sort(struct node* head) {
-  struct node *x, *y, *e;
-
-  x = head;
-  head = NULL;
-
-  while (x != NULL) {
-    e = x;
-    x = x->next;
-    if (head != NULL) {
-      if (e->flag > head->flag) {
-        y = head;
-        while ((y->next != NULL) && (e->flag > y->next->flag)) {
-          y = y->next;
-        }
-        e->next = y->next;
-        y->next = e;
-      } else {
-        e->next = head;
-        head = e;
-      }
-    } else {
-      e->next = NULL;
-      head = e;
-    }
-  }
-  return head;
-}
-
-/*
-    reverse the linked list
-*/
-static struct node* reverse(struct node* head) {
-  struct node* prev = NULL;
-  struct node* current = head;
-  struct node* next;
-  while (current != NULL) {
-    next = current->next;
-    current->next = prev;
-    prev = current;
-    current = next;
-  }
-  head = prev;
-  return head;
-}
 
 /**
  * Commander
  */
 
 static struct node* cmd_flags;
-static int cmd_index;
-static void * cmd_value;
+static struct node* cmd_flags_copy;
 
-int cmdcount() {
-  return count(cmd_flags);
+static int cmd_option_index;
+static int cmd_value_index;
+
+int cmd_opt_count() {
+  return count(cmd_flags_copy);
 }
 
-void cmdprint() {
-  display_all(cmd_flags);
+void cmd_opt_print() {
+  display_all(cmd_flags_copy);
 }
 
-int cmdindex() {
-  return cmd_index;
+int cmd_opt_index() {
+  return cmd_option_index;
 }
 
-void * cmdvalue() {
-  return cmd_value;
+int cmd_val_index() {
+  return cmd_value_index;
 }
 
-void cmdopt1(char* format) {
-  if (cmd_flags == NULL)
-    cmd_flags = create_with_value(format, cmd_flags);
-  else
-    cmd_flags = append_with_value(cmd_flags, format);
-}
-
-void cmdopt2(char* flag, char* name) {
-  if (cmd_flags == NULL)
-    cmd_flags = create_with_name(flag, name, cmd_flags);
-  else
-    cmd_flags = append_with_name(cmd_flags, flag, name);
-}
-
-void cmdopt3(char* flag, char* name, char* format) {
-  if (cmd_flags == NULL)
-    cmd_flags = create_with_name_and_value(flag, name, format, cmd_flags);
-  else
-    cmd_flags = append_with_name(cmd_flags, flag, name);
-}
-
-static int cmdupdate(struct node *n, int argc, char* argv[], int index) {
-  int id = n->id;
-  cmd_index = index;
-  if (n->format != NULL) {
-    n->value = malloc(sizeof(argv[index]));
-    sscanf(argv[index], n->format, n->value);
-    cmd_value = n->value;
-    free(n->value);
+void cmd_opt_value() {
+  if (cmd_flags == NULL) {
+    cmd_flags = create(cmd_flags, true);
+    cmd_flags_copy = create(cmd_flags_copy, false);
+  } else {
+    cmd_flags = append(cmd_flags, true);
+    cmd_flags_copy = append(cmd_flags_copy, false);
   }
+}
+
+void cmd_opt(char* flag, char* name, bool valuable) {
+  if (cmd_flags == NULL) {
+    cmd_flags = create_with_flag(flag, name, valuable, cmd_flags, true);
+    cmd_flags_copy = create_with_flag(flag, name, valuable, cmd_flags_copy, false);
+  } else {
+    cmd_flags = append_with_flag(cmd_flags, true, flag, name, valuable);
+    cmd_flags_copy = append_with_flag(cmd_flags_copy, false, flag, name, valuable);
+  }
+}
+
+static int cmd_update(struct node* n, int argc, char* argv[], int index) {
+  int id = n->id;
+  cmd_option_index = index;
+  // Find the copy of the current node
+  struct node* n_copy = search(cmd_flags_copy, id);
+  // Set the value of the copy if required
+  if (n->flagable && n->valuable) {
+    // Since we expect a value next to the flag,
+    // make sure we don't go over argc
+    if (index + 1 < argc) {
+      if (n_copy != NULL) n_copy->value = argv[index + 1];
+    }
+  } else if (n->valuable && argv[index][0] != '-') {
+    // Copy the value as long the value at the current
+    // index isn't a lonely flag
+    if (n_copy != NULL) n_copy->value = argv[index];
+    // Set the value index to the current index of argv
+    cmd_value_index = index;
+  } else
+    // Just set it the index to argv[0]
+    cmd_value_index = 0;
+  
+  // Remove the node so we won't have 
+  // an endless loop.
   cmd_flags = remove_any(cmd_flags, n);
+  // Return the option id
   return id;
 }
 
-int cmdparse(int argc, char* argv[]) {
-  for (int i = 0; i < argc; i++) {
+int cmd_parse(int argc, char* argv[]) {
+  for (int i = 1; i < argc; i++) {
     if (cmd_flags != NULL) {
       struct node* n = search_by_flag_or_name(cmd_flags, argv[i], argv[i]);
       if (n != NULL) {
-        return cmdupdate(n, argc, argv, i);
+        return cmd_update(n, argc, argv, i);
       }
 
-      n = search_by_id(cmd_flags, i);
-      if (n != NULL) {
-        return cmdupdate(n, argc, argv, i);
+      if (argv[i][0] != '-') n = search(cmd_flags, i);
+      if (n != NULL && !(n->flagable) && n->valuable) {
+        return cmd_update(n, argc, argv, i);
       }
     } else
       break;
   }
+  // printf("linked list original:\n");
+  // display_all(cmd_flags);
+  // printf("----------------------\n");
+  dispose(cmd_flags);
+  node_id_reset();
+  node_id_copy_reset();
   return -1;
 }
 
