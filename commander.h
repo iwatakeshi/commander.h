@@ -40,7 +40,6 @@ static struct node* search_by_flag(struct node* head, char* flag, char* name);
 static void dispose(struct node* head);
 static void node_id_reset();
 static void node_id_copy_reset();
-static int node_count();
 static int node_count(struct node* head);
 
 /**
@@ -132,9 +131,13 @@ int cmd_parse(int argc, char* argv[]) {
         return cmd_update(n, argc, argv, i);
       }
 
-      if (argv[i][0] != '-') n = search_by_id(cmd_flags, i);
-      if (n != NULL && !(n->flagable) && n->valuable) {
-        return cmd_update(n, argc, argv, i);
+      if (argv[i][0] != '-') {
+        for(int k = 0; k < node_count(cmd_flags); k++) {
+          n = search_by_id(cmd_flags, k);
+          if (n != NULL && !(n->flagable) && n->valuable) {
+            return cmd_update(n, argc, argv, i);
+          }
+        }
       }
     } else
       break;
