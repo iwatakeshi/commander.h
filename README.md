@@ -45,6 +45,10 @@ int cmd_free();
 
 Simply include "commander.h" into your program and compile.
 
+
+> Note: Warnings about write strings may appear when compiling in C++. You can add the `-Wno-write-strings` option to surpress it.
+
+
 ```c
 #include "commander.h"
 #include <stdio.h>
