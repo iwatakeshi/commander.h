@@ -105,6 +105,7 @@ static int cmd_update(struct node* n, int argc, char* argv[], int index) {
     // make sure we don't go over argc
     if (index + 1 < argc) {
       if (n_copy != NULL) n_copy->value = argv[index + 1];
+      cmd_value_index = index + 1;
     }
   } else if (n->valuable && argv[index][0] != '-') {
     // Copy the value as long the value at the current
