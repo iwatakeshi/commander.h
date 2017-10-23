@@ -364,6 +364,8 @@ static struct node* search_by_flag(struct node* head, char* flag, char* name) {
     if (cursor->flag != NULL && cursor->name != NULL) {
       if (strcmp(cursor->flag, flag) == 0)
         return cursor;
+      if (strcmp(cursor->name, name) == 0)
+        return cursor;
     }
     cursor = cursor->next;
   }
